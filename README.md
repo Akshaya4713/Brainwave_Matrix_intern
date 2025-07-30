@@ -1,2 +1,2 @@
 # Brainwave_Matrix_intern
-Expense tracker
+my blogging application
