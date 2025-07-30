@@ -1,2 +1,2 @@
 # Brainwave_Matrix_intern
-my blogging application
+expense tracker and blogging application
