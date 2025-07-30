@@ -1,90 +1,83 @@
-//script.js
-document.addEventListener("DOMContentLoaded", () => {
-    const expenseForm = document.getElementById("expense-form");
-    const expenseList = document.getElementById("expense-list");
-    const totalAmount = document.getElementById("total-amount");
-    const filterCategory = document.getElementById("filter-category");
+document.addEventListener('DOMContentLoaded', () => {
+    const blogPostForm = document.getElementById('blog-post-form');
+    const postTitleInput = document.getElementById('post-title');
+    const postContentTextarea = document.getElementById('post-content');
+    const postsContainer = document.getElementById('posts-container');
 
-    let expenses = [];
+    // Function to get posts from local storage
+    const getPosts = () => {
+        const posts = localStorage.getItem('blogPosts');
+        return posts ? JSON.parse(posts) : [];
+    };
 
-    expenseForm.addEventListener("submit", (e) => {
-        e.preventDefault();
+    // Function to save posts to local storage
+    const savePosts = (posts) => {
+        localStorage.setItem('blogPosts', JSON.stringify(posts));
+    };
 
-        const name = document.getElementById("expense-name").value;
-        const amount = parseFloat(document.getElementById("expense-amount").value);
-        const category = document.getElementById("expense-category").value;
-        const date = document.getElementById("expense-date").value;
+    // Function to display posts
+    const displayPosts = () => {
+        postsContainer.innerHTML = ''; // Clear existing posts
+        const posts = getPosts();
 
-        const expense = {
-            id: Date.now(),
-            name,
-            amount,
-            category,
-            date
-        };
-
-        expenses.push(expense);
-        displayExpenses(expenses);
-        updateTotalAmount();
-
-        expenseForm.reset();
-    });
-
-    expenseList.addEventListener("click", (e) => {
-        if (e.target.classList.contains("delete-btn")) {
-            const id = parseInt(e.target.dataset.id);
-            expenses = expenses.filter(expense => expense.id !== id);
-            displayExpenses(expenses);
-            updateTotalAmount();
+        if (posts.length === 0) {
+            postsContainer.innerHTML = '<p>No posts yet. Be the first to publish!</p>';
+            return;
         }
 
-        if (e.target.classList.contains("edit-btn")) {
-            const id = parseInt(e.target.dataset.id);
-            const expense = expenses.find(expense => expense.id === id);
-
-            document.getElementById("expense-name").value = expense.name;
-            document.getElementById("expense-amount").value = expense.amount;
-            document.getElementById("expense-category").value = expense.category;
-            document.getElementById("expense-date").value = expense.date;
-
-            expenses = expenses.filter(expense => expense.id !== id);
-            displayExpenses(expenses);
-            updateTotalAmount();
-        }
-    });
-
-    filterCategory.addEventListener("change", (e) => {
-        const category = e.target.value;
-        if (category === "All") {
-            displayExpenses(expenses);
-        } else {
-            const filteredExpenses = expenses.filter(expense => expense.category === category);
-            displayExpenses(filteredExpenses);
-        }
-    });
-
-    function displayExpenses(expenses) {
-        expenseList.innerHTML = "";
-        expenses.forEach(expense => {
-            const row = document.createElement("tr");
-
-            row.innerHTML = `
-                <td>${expense.name}</td>
-                <td>$${expense.amount.toFixed(2)}</td>
-                <td>${expense.category}</td>
-                <td>${expense.date}</td>
-                <td>
-                    <button class="edit-btn" data-id="${expense.id}">Edit</button>
-                    <button class="delete-btn" data-id="${expense.id}">Delete</button>
-                </td>
+        posts.forEach((post) => {
+            const postCard = document.createElement('div');
+            postCard.classList.add('post-card');
+            postCard.innerHTML = `
+                <h3>${post.title}</h3>
+                <p>${post.content.split('\n').map(p => `<p>${p}</p>`).join('')}</p>
+                <div class="post-meta">
+                    <span>Published on: ${new Date(post.timestamp).toLocaleDateString()} at ${new Date(post.timestamp).toLocaleTimeString()}</span>
+                    <button data-id="${post.id}">Delete</button>
+                </div>
             `;
-
-            expenseList.appendChild(row);
+            postsContainer.appendChild(postCard);
         });
-    }
+    };
 
-    function updateTotalAmount() {
-        const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-        totalAmount.textContent = total.toFixed(2);
-    }
+    // Handle form submission
+    blogPostForm.addEventListener('submit', (e) => {
+        e.preventDefault(); // Prevent default form submission
+
+        const title = postTitleInput.value.trim();
+        const content = postContentTextarea.value.trim();
+
+        if (title && content) {
+            const posts = getPosts();
+            const newPost = {
+                id: Date.now(), // Unique ID for the post
+                title,
+                content,
+                timestamp: new Date().toISOString()
+            };
+            posts.unshift(newPost); // Add new post to the beginning
+            savePosts(posts);
+            displayPosts();
+
+            // Clear the form
+            postTitleInput.value = '';
+            postContentTextarea.value = '';
+        } else {
+            alert('Please fill in both the title and content fields.');
+        }
+    });
+
+    // Handle post deletion using event delegation
+    postsContainer.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON' && e.target.hasAttribute('data-id')) {
+            const postIdToDelete = parseInt(e.target.dataset.id);
+            let posts = getPosts();
+            posts = posts.filter(post => post.id !== postIdToDelete);
+            savePosts(posts);
+            displayPosts();
+        }
+    });
+
+    // Initial display of posts when the page loads
+    displayPosts();
 });
